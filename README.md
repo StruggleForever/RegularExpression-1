@@ -1,71 +1,49 @@
-##1.简述
-    在我们使用聊天工具进行交流的时候，我们会看到当键盘弹出后，聊天界面向上平移的动画，
-    让用户输入信息的时候能够看到自己输入的信息，使键盘无法遮盖文本框。
+##简单了解:
+>    正则表达式(regular expression)描述了一种字符串匹配的模式，可以用来检查一个串是否含有某种子串、将匹配的子串做替换或者从某个串中取出符合某个条件的子串等。
+      正则表达式是由普通字符（例如:字符 a 到 z）以及特殊字符（称为"元字符"）组成的文字模式。模式描述在搜索文本时要匹配的一个或多个字符串。正则表达式作为一个模板，将某个字符模式与所搜索的字符串进行匹配。
 
-##2.使用的方法
-    在这里我们有两种方法可供选择:
-    2.1 UITextFieldDelegate中的
-    - (void)textFieldDidBeginEditing:(UITextField *)textField; 
-    - (void)textFieldDidEndEditing:(UITextField *)textField;   
-    通过这两个方法来获取键盘是否弹出的状态，然后对视图进行向上平移的动画
-
-    2.2 使用NSNotificationCenter
-    使用消息通知中心，来检测键盘是否弹出的状态，同时，苹果官方也提供了监视键盘状态的接口：
-![键盘状态监视接口属性](http://upload-images.jianshu.io/upload_images/2061725-a89c7e327e4fa347.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-    2.3 在这里，我推荐大家使用NSNotificationCenter来获取键盘的状态，
-    因为，在后面我们还需要得到键盘的尺寸大小，来确定我们的视图应该向上平移多少像素，
-    同时，苹果自带的键盘有多个类型，高度不一，
-    我们需要通过访问弹出的键盘的CGSize来控制平移的像素到底是多少,
-    我们直接可以通过KVO方法获取到，而不需要自己判断是哪一种键盘，然后获取它的尺寸。
-     NSDictionary* info = [aNotification userInfo];
-    // 获取到键盘尺寸
-     CGSize keyboardSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
-
-##3.代码
-    3.1 首先添加消息通知机制
-    - (void)addKeyboardNotifications {
-        //使用NSNotificationCenter 键盘将要出现时
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWillShow:)
-                                                     name:UIKeyboardWillShowNotification 
-                                                   object:nil];
-
-        //使用NSNotificationCenter 键盘将要隐藏时
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWillBeHidden:)
-                                                     name:UIKeyboardWillHideNotification 
-                                                   object:nil];
+---
+##简单示例(说明基础语法)
+    - (BOOL)checkTheTestString:(NSString *)testString {
+        NSString *number=@"^[0-9]+$";
+        NSPredicate *numberPre = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",number];
+        return [numberPre evaluateWithObject: testString];
     }
+1. 首先我们撇开语法，看看一个正则表达式里包含了一些什么
 
-----
-    3.2 消息通知机制有添加，就必须有删除，不然它会一直运行
-    在这里我选择在退出该界面时移除
-    - (void)viewWillDisappear:(BOOL)animated {
-        // 离开该界面，自动移除消息通知机制
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
-    }
-----
-    3.3 当想用的机制被触发时，调用下面的函数
-    // 实现当键盘将出现的时候计算键盘的高度大小, 用于向上平移视图显示输入框
-    - (void)keyboardWillShow:(NSNotification*)aNotification {
-        NSDictionary* info = [aNotification userInfo];
-        // 获取到键盘尺寸
-        CGSize keyboardSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
-    
-        //视图向上平移动画加载
-        [UIView animateWithDuration:0.3 animations:^{
-            CGRect frame = self.view.frame;
-            frame.origin.y = -keyboardSize.height;
-            self.view.frame = frame;
-        }];
-    }
+    * "^"和"$"分别指出了一个字符串的开始和结束，如：
 
-    //当键盘隐藏的时候
-    - (void)keyboardWillBeHidden:(NSNotification*)aNotification {
-        [UIView animateWithDuration:0.3 animations:^{
-            CGRect frame = self.view.frame;
-            frame.origin.y = 0.0;
-            self.view.frame = frame;
-        }];
-    }
+          "^YJZ.*"：表示所有以"YJZ"开头的字符串("YJZ001", "YJZ is a coder",  "YJZ's Blog"等等, 其中"."表示任意字符,"*"在后面会提到)
+          ".*a single dog$"：表示所有以"a single dog"结尾的字符字符串("I'm a single dog"等等)
+          "^iPhone$"：表示开始和结束都是"iPhone"的字符串，这是唯一的，没有别的结果，去掉两旁的符号得到的结果一样
+    * "+"、"*"和"?"这三个符号属于一类，它们表示一个或N个字符重复出现的次数，下面我用数学上的区间说明
+          "WoW+"：表示一个字符串"Wo"后面跟着至少一个"W"([1, +∞]),
+                  ("WoW", "WoWWWWW")
+          "WoW*"：表示一个字符串"Wo"后面跟着零个或若干个"W"([0, +∞]),
+                  ("Wo", "WoW", "WoWWWW")
+          "WoW?"：表示一个字符串"Wo"后面跟着零个或者一个b[0, 1],
+                  ("Wo", "WoW",只有这两种结果)
+
+    * "+", "*", "?"可以用"{}"替代, "{}"表示一个字符串重复的具体范围
+          "+"：可以用"{1,}"表示; 
+          "*"：可以用"{0,}"表示;
+          "?"：可以用"{0,1}"表示;
+
+          "WoW{3}"：表示一个字符串"Wo"后跟着4个"W"("WoWWW")
+          "WoW{1,}"：表示一个字符串"Wo"后面跟着至少一个"W"([1, +∞]),
+                      ("WoW", "WoWWWWW")
+          "WoW{3,4}"：表示一个字符串@"Wo"跟着3到4个"W",
+                      ("WoWWW", "WoWWWW")
+
+          注意：一个"{}"内可以没有上限，但不能没有下限， 括号内不允许有空格，不然程序会崩溃
+          崩溃原因如下:
+          Terminating app due to uncaught exception 'NSInternalInconsistencyException', reason: 'Can't do regex matching, reason: Can't open pattern U_REGEX_BAD_INTERVAL (string WoW123, pattern WoW{3, 4}, case 0, canon 0)'
+!["{}"中有空格时会使程序崩溃，报错如图.png](http://upload-images.jianshu.io/upload_images/2061725-575c37db0b644d9a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+    * [0-9]表示一个字符串包含0到9中的一个
+          "[a-d]"：表示一个字符串包含小写的'a'到'd'中的一个(相当于"a|b|c|d"或者"[abcd]");
+          "^[a-zA-Z].*"：表示一个以字母开头的字符串；
+          "[0-9]a"：表示a前有一位的数字；　　   
+          ".*[a-zA-Z0-9]$"：表示一个字符串以一个字母或数字结束。
+
+今天就学到这儿了，扛不住了，睡觉去~
