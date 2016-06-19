@@ -5,10 +5,11 @@
 ---
 ##简单示例(说明基础语法)
     - (BOOL)checkTheTestString:(NSString *)testString {
-        NSString *number=@"^[0-9]+$";
-        NSPredicate *numberPre = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",number];
-        return [numberPre evaluateWithObject: testString];
+            NSString *number=@"^[0-9]+$";
+            NSPredicate *numberPre = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",number];
+            return [numberPre evaluateWithObject: testString];
       }
+      
 1. 首先我们撇开语法，看看一个正则表达式里包含了一些什么
 
     * "^"和"$"分别指出了一个字符串的开始和结束，如：
